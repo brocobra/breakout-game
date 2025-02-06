@@ -13,11 +13,11 @@ enemyImage.src = 'assets/enemy.png';
 const ballRadius = 10;
 const paddleHeight = 10;
 const paddleWidth = 75;
-const brickRowCount = 15;  // ブロックの行数を増加
-const brickColumnCount = 20;  // ブロックの列数を増加
-const brickWidth = 40;  // ブロックのサイズを調整
+const brickRowCount = 15;
+const brickColumnCount = 20;
+const brickWidth = 40;
 const brickHeight = 20;
-const brickPadding = 2;  // パディングを調整
+const brickPadding = 2;
 const brickOffsetTop = 30;
 const brickOffsetLeft = 0;
 
@@ -45,6 +45,83 @@ const difficultySettings = {
         enemyCount: 4
     }
 };
+
+// ゲーム状態
+let score = 0;
+let level = 1;
+let lives = 3;
+let gameStarted = false;
+let x = canvas.width / 2;
+let y = canvas.height - 30;
+let dx = 5;
+let dy = -5;
+let paddleX = (canvas.width - paddleWidth) / 2;
+let rightPressed = false;
+let leftPressed = false;
+let currentDifficulty = 'normal';
+let bricks = [];
+let enemies = [];
+let animationId = null;
+
+// キーボードイベントのリスナー
+document.addEventListener('keydown', keyDownHandler);
+document.addEventListener('keyup', keyUpHandler);
+
+function keyDownHandler(e) {
+    if (e.key === 'Right' || e.key === 'ArrowRight') {
+        rightPressed = true;
+    } else if (e.key === 'Left' || e.key === 'ArrowLeft') {
+        leftPressed = true;
+    }
+}
+
+function keyUpHandler(e) {
+    if (e.key === 'Right' || e.key === 'ArrowRight') {
+        rightPressed = false;
+    } else if (e.key === 'Left' || e.key === 'ArrowLeft') {
+        leftPressed = false;
+    }
+}
+
+// 難易度の取得
+function getDifficulty() {
+    return document.getElementById('difficulty').value;
+}
+
+// ゲーム初期化
+function initGame() {
+    // アニメーションをキャンセル
+    if (animationId) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+    }
+
+    currentDifficulty = getDifficulty();
+    const settings = difficultySettings[currentDifficulty];
+    
+    lives = settings.lives;
+    dx = settings.ballSpeed;
+    dy = -settings.ballSpeed;
+    paddleWidth = settings.paddleWidth;
+    paddleX = (canvas.width - paddleWidth) / 2;
+    x = canvas.width / 2;
+    y = canvas.height - 30;
+    score = 0;
+    level = 1;
+    gameStarted = false;
+    
+    initBricks();
+    initEnemies();
+    updateUI();
+
+    // 初期画面を描画
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawBackground();
+    drawBricks();
+    drawBall();
+    drawPaddle();
+    drawLives();
+}
 
 // お邪魔キャラクター
 class Enemy {
@@ -85,47 +162,6 @@ class Enemy {
     }
 }
 
-// ゲーム状態
-let score = 0;
-let level = 1;
-let lives;
-let gameStarted = false;
-let x = canvas.width / 2;
-let y = canvas.height - 30;
-let dx;
-let dy;
-let paddleX = (canvas.width - paddleWidth) / 2;
-let rightPressed = false;
-let leftPressed = false;
-let currentDifficulty;
-let bricks = [];
-let enemies = [];
-
-// 難易度の取得
-function getDifficulty() {
-    return document.getElementById('difficulty').value;
-}
-
-// ゲーム初期化
-function initGame() {
-    currentDifficulty = getDifficulty();
-    const settings = difficultySettings[currentDifficulty];
-    
-    lives = settings.lives;
-    dx = settings.ballSpeed;
-    dy = -settings.ballSpeed;
-    paddleWidth = settings.paddleWidth;
-    paddleX = (canvas.width - paddleWidth) / 2;
-    x = canvas.width / 2;
-    y = canvas.height - 30;
-    score = 0;
-    level = 1;
-    
-    initBricks();
-    initEnemies();
-    updateUI();
-}
-
 // ブロックの初期化
 function initBricks() {
     bricks = [];
@@ -159,47 +195,17 @@ function updateUI() {
     document.getElementById('level').textContent = level;
 }
 
-// キーボードイベントの設定
-document.addEventListener('keydown', keyDownHandler);
-document.addEventListener('keyup', keyUpHandler);
-document.addEventListener('mousemove', mouseMoveHandler);
-
-function keyDownHandler(e) {
-    if (e.key === 'Right' || e.key === 'ArrowRight') {
-        rightPressed = true;
-    } else if (e.key === 'Left' || e.key === 'ArrowLeft') {
-        leftPressed = true;
-    }
-}
-
-function keyUpHandler(e) {
-    if (e.key === 'Right' || e.key === 'ArrowRight') {
-        rightPressed = false;
-    } else if (e.key === 'Left' || e.key === 'ArrowLeft') {
-        leftPressed = false;
-    }
-}
-
-function mouseMoveHandler(e) {
-    const relativeX = e.clientX - canvas.offsetLeft;
-    if (relativeX > 0 && relativeX < canvas.width) {
-        paddleX = relativeX - paddleWidth / 2;
-    }
-}
-
 // 描画関数
 function drawBall() {
     if (ballImage.complete) {
-        // 画像を描画（中心座標を基準に描画）
         ctx.drawImage(
             ballImage,
-            x - ballRadius,  // X座標（中心から左に半径分）
-            y - ballRadius,  // Y座標（中心から上に半径分）
-            ballRadius * 2,  // 幅（直径）
-            ballRadius * 2   // 高さ（直径）
+            x - ballRadius,  
+            y - ballRadius,  
+            ballRadius * 2,  
+            ballRadius * 2   
         );
     } else {
-        // 画像が読み込まれていない場合は円を描画（フォールバック）
         ctx.beginPath();
         ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
         ctx.fillStyle = '#FFD700';
@@ -223,7 +229,7 @@ function drawPaddle() {
 
 function drawBackground() {
     if (backgroundImage.complete) {
-        ctx.globalAlpha = 0.3;  // 背景を薄く表示
+        ctx.globalAlpha = 0.3;  
         ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
         ctx.globalAlpha = 1.0;
     }
@@ -245,7 +251,6 @@ function drawBricks() {
                 ctx.beginPath();
                 ctx.rect(brickX, brickY, brickWidth, brickHeight);
                 
-                // 体力に応じて色を変える
                 const healthRatio = bricks[c][r].health / bricks[c][r].maxHealth;
                 const hue = healthRatio * 120;
                 ctx.fillStyle = `hsl(${hue}, 70%, 50%)`;
@@ -258,10 +263,9 @@ function drawBricks() {
         }
     }
 
-    // 背景画像の透明度を残りブロック数に応じて調整
     const visibilityRatio = 1 - (remainingBricks / totalBricks);
     if (backgroundImage.complete) {
-        ctx.globalAlpha = 0.3 + (visibilityRatio * 0.7);  // 0.3から1.0の間で変化
+        ctx.globalAlpha = 0.3 + (visibilityRatio * 0.7);  
         ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
         ctx.globalAlpha = 1.0;
     }
@@ -312,7 +316,6 @@ function levelUp() {
     level++;
     updateUI();
     
-    // ボールの速度を増加
     const settings = difficultySettings[currentDifficulty];
     const speedIncrease = settings.speedIncrease;
     
@@ -322,13 +325,13 @@ function levelUp() {
     if (dy > 0) dy += speedIncrease;
     else dy -= speedIncrease;
     
-    // 次のレベルの準備
     initBricks();
     x = canvas.width / 2;
     y = canvas.height - 30;
     paddleX = (canvas.width - paddleWidth) / 2;
 }
 
+// ゲームループ
 function draw() {
     if (!gameStarted) return;
     
@@ -339,18 +342,16 @@ function draw() {
     drawPaddle();
     drawLives();
 
-    // お邪魔キャラの更新と描画
     enemies.forEach(enemy => {
         enemy.move();
         enemy.draw();
         if (enemy.checkCollision(x, y)) {
-            dy = -dy;  // ボールの方向を反転
+            dy = -dy;
         }
     });
 
     collisionDetection();
 
-    // 壁との衝突判定
     if (x + dx > canvas.width - ballRadius || x + dx < ballRadius) {
         dx = -dx;
     }
@@ -358,7 +359,6 @@ function draw() {
         dy = -dy;
     } else if (y + dy > canvas.height - ballRadius) {
         if (x > paddleX && x < paddleX + paddleWidth) {
-            // パドルとの衝突時の跳ね返り角度を計算
             const hitPoint = (x - paddleX) / paddleWidth;
             const angle = hitPoint * Math.PI - Math.PI/2;
             const speed = Math.sqrt(dx * dx + dy * dy);
@@ -366,9 +366,11 @@ function draw() {
             dy = -speed * Math.sin(angle);
         } else {
             lives--;
+            updateUI();
+            
             if (lives <= 0) {
                 alert('ゲームオーバー！\nスコア: ' + score + '\nレベル: ' + level);
-                document.location.reload();
+                initGame();
                 return;
             } else {
                 x = canvas.width / 2;
@@ -380,7 +382,6 @@ function draw() {
         }
     }
 
-    // パドルの移動
     if (rightPressed && paddleX < canvas.width - paddleWidth) {
         paddleX += 7;
     } else if (leftPressed && paddleX > 0) {
@@ -389,27 +390,23 @@ function draw() {
 
     x += dx;
     y += dy;
-    requestAnimationFrame(draw);
+    
+    animationId = requestAnimationFrame(draw);
 }
 
 // ゲーム開始とリスタートの処理
 document.addEventListener('DOMContentLoaded', () => {
-    // 初期状態のブロックを描画
-    initBricks();
-    drawBricks();
-    drawPaddle();
+    initGame();
 });
 
 document.getElementById('startButton').addEventListener('click', () => {
     if (!gameStarted) {
         gameStarted = true;
-        initGame();
         draw();
     }
 });
 
 document.getElementById('restartButton').addEventListener('click', () => {
-    gameStarted = false;
     initGame();
     gameStarted = true;
     draw();
@@ -417,7 +414,5 @@ document.getElementById('restartButton').addEventListener('click', () => {
 
 // 難易度変更時の処理
 document.getElementById('difficulty').addEventListener('change', () => {
-    if (!gameStarted) {
-        initGame();
-    }
+    initGame();
 });
