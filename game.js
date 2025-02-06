@@ -116,6 +116,10 @@ function initGame() {
     dy = -settings.ballSpeed;
     paddleWidth = settings.paddleWidth;
     paddleX = (canvas.width - paddleWidth) / 2;
+    x = canvas.width / 2;
+    y = canvas.height - 30;
+    score = 0;
+    level = 1;
     
     initBricks();
     initEnemies();
@@ -389,6 +393,13 @@ function draw() {
 }
 
 // ゲーム開始とリスタートの処理
+document.addEventListener('DOMContentLoaded', () => {
+    // 初期状態のブロックを描画
+    initBricks();
+    drawBricks();
+    drawPaddle();
+});
+
 document.getElementById('startButton').addEventListener('click', () => {
     if (!gameStarted) {
         gameStarted = true;
@@ -398,7 +409,10 @@ document.getElementById('startButton').addEventListener('click', () => {
 });
 
 document.getElementById('restartButton').addEventListener('click', () => {
-    document.location.reload();
+    gameStarted = false;
+    initGame();
+    gameStarted = true;
+    draw();
 });
 
 // 難易度変更時の処理
