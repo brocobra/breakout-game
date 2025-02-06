@@ -4,40 +4,86 @@ const ctx = canvas.getContext('2d');
 // 画像の読み込み
 const ballImage = new Image();
 ballImage.src = 'assets/ball.png';
+const backgroundImage = new Image();
+backgroundImage.src = 'assets/background.png';
+const enemyImage = new Image();
+enemyImage.src = 'assets/enemy.png';
 
 // ゲーム設定
 const ballRadius = 10;
 const paddleHeight = 10;
 const paddleWidth = 75;
-const brickRowCount = 6;
-const brickColumnCount = 10;
-const brickWidth = 75;
+const brickRowCount = 15;  // ブロックの行数を増加
+const brickColumnCount = 20;  // ブロックの列数を増加
+const brickWidth = 40;  // ブロックのサイズを調整
 const brickHeight = 20;
-const brickPadding = 10;
+const brickPadding = 2;  // パディングを調整
 const brickOffsetTop = 30;
-const brickOffsetLeft = 30;
+const brickOffsetLeft = 0;
 
 // 難易度設定
 const difficultySettings = {
     easy: {
-        ballSpeed: 3,
+        ballSpeed: 4,
         paddleWidth: 100,
         lives: 5,
-        speedIncrease: 0.2
+        speedIncrease: 0.2,
+        enemyCount: 0
     },
     normal: {
-        ballSpeed: 4,
+        ballSpeed: 5,
         paddleWidth: 75,
         lives: 3,
-        speedIncrease: 0.3
+        speedIncrease: 0.3,
+        enemyCount: 2
     },
     hard: {
-        ballSpeed: 5,
+        ballSpeed: 6,
         paddleWidth: 50,
         lives: 2,
-        speedIncrease: 0.4
+        speedIncrease: 0.4,
+        enemyCount: 4
     }
 };
+
+// お邪魔キャラクター
+class Enemy {
+    constructor() {
+        this.width = 30;
+        this.height = 30;
+        this.x = Math.random() * (canvas.width - this.width);
+        this.y = Math.random() * (canvas.height / 2);
+        this.dx = (Math.random() - 0.5) * 4;
+        this.dy = (Math.random() - 0.5) * 4;
+    }
+
+    move() {
+        if (this.x + this.dx > canvas.width - this.width || this.x + this.dx < 0) {
+            this.dx = -this.dx;
+        }
+        if (this.y + this.dy > canvas.height / 2 || this.y + this.dy < 0) {
+            this.dy = -this.dy;
+        }
+        this.x += this.dx;
+        this.y += this.dy;
+    }
+
+    draw() {
+        if (enemyImage.complete) {
+            ctx.drawImage(enemyImage, this.x, this.y, this.width, this.height);
+        } else {
+            ctx.fillStyle = 'red';
+            ctx.fillRect(this.x, this.y, this.width, this.height);
+        }
+    }
+
+    checkCollision(ballX, ballY) {
+        return (ballX > this.x && 
+                ballX < this.x + this.width && 
+                ballY > this.y && 
+                ballY < this.y + this.height);
+    }
+}
 
 // ゲーム状態
 let score = 0;
@@ -53,6 +99,7 @@ let rightPressed = false;
 let leftPressed = false;
 let currentDifficulty;
 let bricks = [];
+let enemies = [];
 
 // 難易度の取得
 function getDifficulty() {
@@ -71,6 +118,7 @@ function initGame() {
     paddleX = (canvas.width - paddleWidth) / 2;
     
     initBricks();
+    initEnemies();
     updateUI();
 }
 
@@ -80,7 +128,7 @@ function initBricks() {
     for (let c = 0; c < brickColumnCount; c++) {
         bricks[c] = [];
         for (let r = 0; r < brickRowCount; r++) {
-            const health = Math.floor(r / 2) + 1; // 上の行ほど壊れやすい
+            const health = Math.floor(r / 3) + 1; // 上の行ほど壊れやすい
             bricks[c][r] = { 
                 x: 0, 
                 y: 0, 
@@ -89,6 +137,15 @@ function initBricks() {
                 maxHealth: health
             };
         }
+    }
+}
+
+// 敵の初期化
+function initEnemies() {
+    enemies = [];
+    const enemyCount = difficultySettings[currentDifficulty].enemyCount;
+    for (let i = 0; i < enemyCount; i++) {
+        enemies.push(new Enemy());
     }
 }
 
@@ -160,10 +217,22 @@ function drawPaddle() {
     ctx.closePath();
 }
 
+function drawBackground() {
+    if (backgroundImage.complete) {
+        ctx.globalAlpha = 0.3;  // 背景を薄く表示
+        ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+        ctx.globalAlpha = 1.0;
+    }
+}
+
 function drawBricks() {
+    const totalBricks = brickRowCount * brickColumnCount;
+    let remainingBricks = 0;
+
     for (let c = 0; c < brickColumnCount; c++) {
         for (let r = 0; r < brickRowCount; r++) {
             if (bricks[c][r].status === 1) {
+                remainingBricks++;
                 const brickX = c * (brickWidth + brickPadding) + brickOffsetLeft;
                 const brickY = r * (brickHeight + brickPadding) + brickOffsetTop;
                 bricks[c][r].x = brickX;
@@ -174,7 +243,7 @@ function drawBricks() {
                 
                 // 体力に応じて色を変える
                 const healthRatio = bricks[c][r].health / bricks[c][r].maxHealth;
-                const hue = healthRatio * 120; // 120は緑、0は赤
+                const hue = healthRatio * 120;
                 ctx.fillStyle = `hsl(${hue}, 70%, 50%)`;
                 
                 ctx.fill();
@@ -184,6 +253,20 @@ function drawBricks() {
             }
         }
     }
+
+    // 背景画像の透明度を残りブロック数に応じて調整
+    const visibilityRatio = 1 - (remainingBricks / totalBricks);
+    if (backgroundImage.complete) {
+        ctx.globalAlpha = 0.3 + (visibilityRatio * 0.7);  // 0.3から1.0の間で変化
+        ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+        ctx.globalAlpha = 1.0;
+    }
+}
+
+function drawLives() {
+    ctx.font = '16px Arial';
+    ctx.fillStyle = '#FFF';
+    ctx.fillText(`Lives: ${lives}`, canvas.width - 65, 20);
 }
 
 function collisionDetection() {
@@ -242,20 +325,25 @@ function levelUp() {
     paddleX = (canvas.width - paddleWidth) / 2;
 }
 
-function drawLives() {
-    ctx.font = '16px Arial';
-    ctx.fillStyle = '#FFF';
-    ctx.fillText(`Lives: ${lives}`, canvas.width - 65, 20);
-}
-
 function draw() {
     if (!gameStarted) return;
     
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawBackground();
     drawBricks();
     drawBall();
     drawPaddle();
     drawLives();
+
+    // お邪魔キャラの更新と描画
+    enemies.forEach(enemy => {
+        enemy.move();
+        enemy.draw();
+        if (enemy.checkCollision(x, y)) {
+            dy = -dy;  // ボールの方向を反転
+        }
+    });
+
     collisionDetection();
 
     // 壁との衝突判定
@@ -267,8 +355,8 @@ function draw() {
     } else if (y + dy > canvas.height - ballRadius) {
         if (x > paddleX && x < paddleX + paddleWidth) {
             // パドルとの衝突時の跳ね返り角度を計算
-            const hitPoint = (x - paddleX) / paddleWidth; // 0-1の値
-            const angle = hitPoint * Math.PI - Math.PI/2; // -π/2 から π/2
+            const hitPoint = (x - paddleX) / paddleWidth;
+            const angle = hitPoint * Math.PI - Math.PI/2;
             const speed = Math.sqrt(dx * dx + dy * dy);
             dx = speed * Math.cos(angle);
             dy = -speed * Math.sin(angle);
