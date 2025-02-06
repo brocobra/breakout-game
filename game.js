@@ -61,15 +61,13 @@ let dy = -5;
 let paddleX = (canvas.width - paddleWidth) / 2;
 let rightPressed = false;
 let leftPressed = false;
+let mouseX = 0;
 let currentDifficulty = 'normal';
 let bricks = [];
 let enemies = [];
 let animationId = null;
 
 // キーボードイベントのリスナー
-document.addEventListener('keydown', keyDownHandler);
-document.addEventListener('keyup', keyUpHandler);
-
 function keyDownHandler(e) {
     if (e.key === 'Right' || e.key === 'ArrowRight') {
         rightPressed = true;
@@ -83,6 +81,22 @@ function keyUpHandler(e) {
         rightPressed = false;
     } else if (e.key === 'Left' || e.key === 'ArrowLeft') {
         leftPressed = false;
+    }
+}
+
+// マウス移動のハンドラ
+function mouseMoveHandler(e) {
+    const relativeX = e.clientX - canvas.offsetLeft;
+    if (relativeX > 0 && relativeX < canvas.width) {
+        mouseX = relativeX;
+        paddleX = mouseX - paddleWidth / 2;
+        
+        // パドルが画面外に出ないように制限
+        if (paddleX < 0) {
+            paddleX = 0;
+        } else if (paddleX + paddleWidth > canvas.width) {
+            paddleX = canvas.width - paddleWidth;
+        }
     }
 }
 
@@ -384,6 +398,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (DEBUG) console.log('Difficulty changed');
         initGame();
     });
+
+    // キーボードとマウスのイベントリスナーを追加
+    document.addEventListener('keydown', keyDownHandler);
+    document.addEventListener('keyup', keyUpHandler);
+    canvas.addEventListener('mousemove', mouseMoveHandler);
     
     // 初期化
     initGame();
@@ -448,7 +467,7 @@ function draw() {
         }
     }
 
-    // パドルの移動
+    // キーボードによるパドル移動
     if (rightPressed && paddleX < canvas.width - paddleWidth) {
         paddleX += 7;
     } else if (leftPressed && paddleX > 0) {
