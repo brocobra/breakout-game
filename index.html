@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ブロック崩しゲーム</title>
+    <meta charset="UTF-8">
+    <style>
+        canvas {
+            border: 1px solid black;
+            display: block;
+            margin: 0 auto;
+        }
+        .container {
+            text-align: center;
+            margin-top: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ブロック崩しゲーム</h1>
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div>
+            <button id="startButton">ゲーム開始</button>
+            <button id="restartButton">リスタート</button>
+        </div>
+        <p>スコア: <span id="score">0</span></p>
+    </div>
+    <script src="game.js"></script>
+</body>
+</html>
