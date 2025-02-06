@@ -1,6 +1,9 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
+// デバッグモード
+const DEBUG = true;
+
 // 画像の読み込み
 const ballImage = new Image();
 ballImage.src = 'assets/ball.png';
@@ -331,9 +334,69 @@ function levelUp() {
     paddleX = (canvas.width - paddleWidth) / 2;
 }
 
+// ゲーム開始とリスタートの処理
+function startGame() {
+    if (DEBUG) console.log('startGame called, gameStarted:', gameStarted);
+    if (!gameStarted) {
+        gameStarted = true;
+        if (DEBUG) console.log('Starting game loop');
+        draw();
+    }
+}
+
+function restartGame() {
+    if (DEBUG) console.log('restartGame called');
+    if (animationId) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+    }
+    initGame();
+    gameStarted = true;
+    draw();
+}
+
+// DOMContentLoadedイベントリスナー
+document.addEventListener('DOMContentLoaded', () => {
+    if (DEBUG) console.log('DOMContentLoaded');
+    
+    // ボタンの取得
+    const startButton = document.getElementById('startButton');
+    const restartButton = document.getElementById('restartButton');
+    const difficultySelect = document.getElementById('difficulty');
+    
+    if (!startButton || !restartButton || !difficultySelect) {
+        console.error('Required elements not found!');
+        return;
+    }
+    
+    // イベントリスナーの設定
+    startButton.addEventListener('click', () => {
+        if (DEBUG) console.log('Start button clicked');
+        startGame();
+    });
+    
+    restartButton.addEventListener('click', () => {
+        if (DEBUG) console.log('Restart button clicked');
+        restartGame();
+    });
+    
+    difficultySelect.addEventListener('change', () => {
+        if (DEBUG) console.log('Difficulty changed');
+        initGame();
+    });
+    
+    // 初期化
+    initGame();
+});
+
 // ゲームループ
 function draw() {
-    if (!gameStarted) return;
+    if (!gameStarted) {
+        if (DEBUG) console.log('Game not started, returning from draw');
+        return;
+    }
+    
+    if (DEBUG) console.log('Drawing frame');
     
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawBackground();
@@ -342,6 +405,7 @@ function draw() {
     drawPaddle();
     drawLives();
 
+    // お邪魔キャラの更新と描画
     enemies.forEach(enemy => {
         enemy.move();
         enemy.draw();
@@ -352,6 +416,7 @@ function draw() {
 
     collisionDetection();
 
+    // 壁との衝突判定
     if (x + dx > canvas.width - ballRadius || x + dx < ballRadius) {
         dx = -dx;
     }
@@ -370,6 +435,7 @@ function draw() {
             
             if (lives <= 0) {
                 alert('ゲームオーバー！\nスコア: ' + score + '\nレベル: ' + level);
+                gameStarted = false;
                 initGame();
                 return;
             } else {
@@ -382,6 +448,7 @@ function draw() {
         }
     }
 
+    // パドルの移動
     if (rightPressed && paddleX < canvas.width - paddleWidth) {
         paddleX += 7;
     } else if (leftPressed && paddleX > 0) {
@@ -391,28 +458,8 @@ function draw() {
     x += dx;
     y += dy;
     
-    animationId = requestAnimationFrame(draw);
-}
-
-// ゲーム開始とリスタートの処理
-document.addEventListener('DOMContentLoaded', () => {
-    initGame();
-});
-
-document.getElementById('startButton').addEventListener('click', () => {
-    if (!gameStarted) {
-        gameStarted = true;
-        draw();
+    if (gameStarted) {
+        animationId = requestAnimationFrame(draw);
+        if (DEBUG) console.log('Animation frame requested:', animationId);
     }
-});
-
-document.getElementById('restartButton').addEventListener('click', () => {
-    initGame();
-    gameStarted = true;
-    draw();
-});
-
-// 難易度変更時の処理
-document.getElementById('difficulty').addEventListener('change', () => {
-    initGame();
-});
+}
