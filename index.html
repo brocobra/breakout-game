@@ -3,6 +3,7 @@
 <head>
     <title>ブロック崩しゲーム</title>
     <meta charset="UTF-8">
+    <link rel="stylesheet" href="styles.css">
     <style>
         canvas {
             border: 1px solid black;
@@ -23,12 +24,23 @@
 <body>
     <div class="container">
         <h1>ブロック崩しゲーム</h1>
+        <div class="level-container">
+            <label for="difficulty">難易度：</label>
+            <select id="difficulty" class="difficulty-select">
+                <option value="easy">かんたん</option>
+                <option value="normal">ふつう</option>
+                <option value="hard">むずかしい</option>
+            </select>
+        </div>
         <canvas id="gameCanvas" width="800" height="600"></canvas>
         <div>
             <button id="startButton">ゲーム開始</button>
             <button id="restartButton">リスタート</button>
         </div>
-        <p>スコア: <span id="score">0</span></p>
+        <div class="score-container">
+            <p>スコア: <span id="score">0</span></p>
+            <p>レベル: <span id="level">1</span></p>
+        </div>
     </div>
     <script src="game.js"></script>
 </body>
