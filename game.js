@@ -185,13 +185,12 @@ function initBricks() {
     for (let c = 0; c < brickColumnCount; c++) {
         bricks[c] = [];
         for (let r = 0; r < brickRowCount; r++) {
-            const health = Math.floor(r / 3) + 1; // 上の行ほど壊れやすい
             bricks[c][r] = { 
                 x: 0, 
                 y: 0, 
                 status: 1,
-                health: health,
-                maxHealth: health
+                health: 1,  // すべてのブロックの耐久度を1に設定
+                maxHealth: 1
             };
         }
     }
@@ -215,13 +214,22 @@ function updateUI() {
 // 描画関数
 function drawBall() {
     if (ballImage.complete) {
+        // 背景を黒で塗りつぶしてから画像を描画
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
+        ctx.fillStyle = '#000';
+        ctx.fill();
+        ctx.closePath();
+        
         ctx.drawImage(
             ballImage,
-            x - ballRadius,  
-            y - ballRadius,  
-            ballRadius * 2,  
-            ballRadius * 2   
+            x - ballRadius,
+            y - ballRadius,
+            ballRadius * 2,
+            ballRadius * 2
         );
+        ctx.restore();
     } else {
         ctx.beginPath();
         ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
@@ -268,8 +276,8 @@ function drawBricks() {
                 ctx.beginPath();
                 ctx.rect(brickX, brickY, brickWidth, brickHeight);
                 
-                const healthRatio = bricks[c][r].health / bricks[c][r].maxHealth;
-                const hue = healthRatio * 120;
+                // ブロックの色をランダムに設定（行ごとに同じ色に）
+                const hue = (r * 20) % 360;  // 行ごとに色相を変える
                 ctx.fillStyle = `hsl(${hue}, 70%, 50%)`;
                 
                 ctx.fill();
@@ -280,9 +288,10 @@ function drawBricks() {
         }
     }
 
+    // 背景画像の透明度を残りブロック数に応じて調整
     const visibilityRatio = 1 - (remainingBricks / totalBricks);
     if (backgroundImage.complete) {
-        ctx.globalAlpha = 0.3 + (visibilityRatio * 0.7);  
+        ctx.globalAlpha = 0.3 + (visibilityRatio * 0.7);
         ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
         ctx.globalAlpha = 1.0;
     }
