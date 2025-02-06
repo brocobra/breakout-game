@@ -1,6 +1,10 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
+// 画像の読み込み
+const ballImage = new Image();
+ballImage.src = 'assets/ball.png';
+
 // ゲーム設定
 const ballRadius = 10;
 const paddleHeight = 10;
@@ -124,13 +128,25 @@ function mouseMoveHandler(e) {
 
 // 描画関数
 function drawBall() {
-    ctx.beginPath();
-    ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
-    ctx.fillStyle = '#FFD700';
-    ctx.fill();
-    ctx.strokeStyle = '#FFA500';
-    ctx.stroke();
-    ctx.closePath();
+    if (ballImage.complete) {
+        // 画像を描画（中心座標を基準に描画）
+        ctx.drawImage(
+            ballImage,
+            x - ballRadius,  // X座標（中心から左に半径分）
+            y - ballRadius,  // Y座標（中心から上に半径分）
+            ballRadius * 2,  // 幅（直径）
+            ballRadius * 2   // 高さ（直径）
+        );
+    } else {
+        // 画像が読み込まれていない場合は円を描画（フォールバック）
+        ctx.beginPath();
+        ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
+        ctx.fillStyle = '#FFD700';
+        ctx.fill();
+        ctx.strokeStyle = '#FFA500';
+        ctx.stroke();
+        ctx.closePath();
+    }
 }
 
 function drawPaddle() {
