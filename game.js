@@ -15,7 +15,7 @@ enemyImage.src = 'assets/enemy.png';
 // ゲーム設定
 const ballRadius = 10;
 const paddleHeight = 10;
-const paddleWidth = 75;
+let paddleWidth = 75;  
 const brickRowCount = 15;
 const brickColumnCount = 20;
 const brickWidth = 40;
@@ -105,7 +105,7 @@ function initGame() {
     lives = settings.lives;
     dx = settings.ballSpeed;
     dy = -settings.ballSpeed;
-    paddleWidth = settings.paddleWidth;
+    paddleWidth = settings.paddleWidth;  // 追加
     paddleX = (canvas.width - paddleWidth) / 2;
     x = canvas.width / 2;
     y = canvas.height - 30;
